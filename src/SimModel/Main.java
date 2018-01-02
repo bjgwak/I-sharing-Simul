@@ -14,8 +14,10 @@ public class Main {
 	
 	private static final transient Logger log = LoggerFactory.getLogger(Main.class.getName());
 	
-	static double maliciousrate = 0.2; 
+	static double highlymaliciousrate = 0.1;
+	static double maliciousrate = 0.1; 
 	static double maliciousactingrate = 0.1;
+	
 	static int learninguser = 200;
 	static int learninground = 100;
 	static int targetuser = 100;
@@ -69,11 +71,15 @@ public class Main {
 		
 		
 		for(int i = 0; i < targetuser; i++){
-			if(i > (1-maliciousrate) * targetuser)
-				newusers[i] = new User(i, i/(targetuser/groupnum), true, "d", 0.5);
+			if(i > (1-highlymaliciousrate) * targetuser)
+				newusers[i] = new User(i, i/(targetuser/groupnum), 2, "d", 0.5);
+			else if(i > (1-(highlymaliciousrate + maliciousrate)) * targetuser){
+				newusers[i] = new User(i, i/(targetuser/groupnum), 1, "d", 0.5);
+			}
 			else
-				newusers[i] = new User(i, i/(targetuser/groupnum), false, "d", 0.5);
+				newusers[i] = new User(i, i/(targetuser/groupnum), 0, "d", 0.5);
 		}
+		
 		
 		for(int j = 0; j < targetround; j++){
 			
@@ -81,32 +87,18 @@ public class Main {
 			
 			for(int i = 0; i < targetuser; i++){
 				
-				newusers[i].putTrustValue(TrustManager.computeTrustValue("P1", String.valueOf(i)));
-				if(newusers[i].getTrustValue() >= 0.5 && newusers[i].getMaliciousness()){
-					falsepositive++;
-				}
-				else if(newusers[i].getTrustValue() < 0.5 && !newusers[i].getMaliciousness()){
-					falsenegative++;
-				}
-				else
-					correct++;
-				
-				if(newusers[i].getMaliciousness() && oRandom.nextFloat() < maliciousactingrate){
-					TrustManager.putInteraction("P1",String.valueOf(i), Feedback.NEGATIVE, newusers[i].getTrustValue());
+				if(newusers[i].getMaliciousness() > 1 && oRandom.nextFloat() < maliciousactingrate){		//sensing malicious actions
 					counter_correct++;
 					}
-				else if(newusers[i].getMaliciousness()){
-					TrustManager.putInteraction("P1",String.valueOf(i), Feedback.POSITIVE, newusers[i].getTrustValue());
+				else if(newusers[i].getMaliciousness() > 1){
 					counter_falsepositive++;
 				}
-				else if(!newusers[i].getMaliciousness()){
-					TrustManager.putInteraction("P1",String.valueOf(i), Feedback.POSITIVE, newusers[i].getTrustValue());
+				else if(newusers[i].getMaliciousness() < 1){
 					counter_correct++;
 				}
 			}
 			
 			log.info(counter_falsepositive + ":" + counter_correct);
-			log.info(falsepositive + ":" + correct);
 			
 			TrustManager.close();
 			Thread.sleep(100);

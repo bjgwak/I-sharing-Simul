@@ -6,11 +6,11 @@ public class User {
 	
 	private int id = 0;
 	private int groupNum = 0;
-	private boolean maliciousness = false;
+	private int maliciousness = 0;
 	private String accessright; 
 	private double trVal = 0.0;
 	
-	public User(int id, int groupnum, boolean malicious, String access, double trVal) {
+	public User(int id, int groupnum, int malicious, String access, double trVal) {
 		this.id = id;
 		this.groupNum = groupnum;
 		this.maliciousness = malicious;
@@ -27,7 +27,7 @@ public class User {
 		return (this.groupNum);
 	}
 	
-	public boolean getMaliciousness() {
+	public int getMaliciousness() {
 		return (this.maliciousness);
 	}
 	
