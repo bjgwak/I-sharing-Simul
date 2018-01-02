@@ -21,8 +21,10 @@ public class Main {
 	static int learninguser = 200;
 	static int learninground = 100;
 	static int targetuser = 100;
-	static int targetround = 1;
+	static int targetround = 200;
 	static int groupnum = 10;
+	
+	static double baserate = 0.5;
 	
 	public static void main(String[] args) throws Exception {
 		
@@ -72,12 +74,11 @@ public class Main {
 		
 		for(int i = 0; i < targetuser; i++){
 			if(i > (1-highlymaliciousrate) * targetuser)
-				newusers[i] = new User(i, i/(targetuser/groupnum), 2, "d", 0.5);
-			else if(i > (1-(highlymaliciousrate + maliciousrate)) * targetuser){
-				newusers[i] = new User(i, i/(targetuser/groupnum), 1, "d", 0.5);
-			}
+				newusers[i] = new User(i, i/(targetuser/groupnum), 2, "U", baserate);
+			else if(i > (1-(highlymaliciousrate + maliciousrate)) * targetuser)
+				newusers[i] = new User(i, i/(targetuser/groupnum), 1, "U", baserate);
 			else
-				newusers[i] = new User(i, i/(targetuser/groupnum), 0, "d", 0.5);
+				newusers[i] = new User(i, i/(targetuser/groupnum), 0, "U", baserate);
 		}
 		
 		
@@ -86,22 +87,43 @@ public class Main {
 			TrustManager.connect(2);
 			
 			for(int i = 0; i < targetuser; i++){
-				
-				if(newusers[i].getMaliciousness() > 1 && oRandom.nextFloat() < maliciousactingrate){		//sensing malicious actions
-					counter_correct++;
+				if(i > (1-highlymaliciousrate) * targetuser){ //highlymalicious
+					if(oRandom.nextFloat() < maliciousactingrate*3){		//sensing malicious actions
+						if(newusers[i].getAccessRights() == "U" || newusers[i].getAccessRights() == "D" || newusers[i].getAccessRights() == "R"){ 	//Access rights are too high	
+							counter_falsepositive++;
+							demoteAR(newusers[i]);
+							//System.out.println(i + "th user is demoted");
+						}
+						else{
+							counter_correct++;		//Access rights are appropiriate
+						}
 					}
-				else if(newusers[i].getMaliciousness() > 1){
-					counter_falsepositive++;
+					else//sensing benign actions
+						counter_falsepositive++;
 				}
-				else if(newusers[i].getMaliciousness() < 1){
+				else if(i > (1-(highlymaliciousrate + maliciousrate)) * targetuser){ //malicious
+					if(oRandom.nextFloat() < maliciousactingrate){		//sensing malicious actions
+						if(newusers[i].getAccessRights() == "U" || newusers[i].getAccessRights() == "D" ||newusers[i].getAccessRights() == "R"){ 	//Access rights are too high	
+							counter_falsepositive++;
+							demoteAR(newusers[i]);
+							//System.out.println(i + "th user is demoted");
+						}
+						else{
+							counter_correct++;		//Access rights are appropiriate
+						}
+					}
+					else//sensing benign actions
+						counter_falsepositive++;
+				}
+				else{		//benign user
 					counter_correct++;
 				}
 			}
-			
-			log.info(counter_falsepositive + ":" + counter_correct);
-			
+			if(j % 10 == 0){
+				log.info(j + ": " + (double)counter_falsepositive/(counter_falsepositive + counter_correct));
+			}
 			TrustManager.close();
-			Thread.sleep(100);
+			//Thread.sleep(10);
 			
 		}
 		
@@ -118,7 +140,7 @@ public class Main {
 		System.exit(0);
 	}
 	
-	public void demoteAR(User user){
+	public static void demoteAR(User user){
 		if(user.getAccessRights().equals("C")){
 			user.putAccessRights("U");
 		}
