@@ -128,7 +128,9 @@ public class Main {
 		}
 		
 		
-		//TODO attackrate를 기반으로 어택을 했으면 권한을 하나하나 줄이는 방식. (CUDRN)
+		
+		
+		
 		//TODO 반대로 attack이 쭉 없었으면 상향시키는 개념이 추가되어야 하는가?
 		//TODO maliciousness 안에 레벨을 나눠야 되지 않을까..
 		//TODO 유저에 대한 experience와 그룹 멤버들로부터 가져온 것과의 밸런싱이 현재 없음.
