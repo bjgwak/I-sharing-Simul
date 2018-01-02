@@ -15,7 +15,7 @@ public class Main {
 	private static final transient Logger log = LoggerFactory.getLogger(Main.class.getName());
 	
 	static double maliciousrate = 0.2; 
-	static double maliciousactingrate = 0.3;
+	static double maliciousactingrate = 0.1;
 	static int learninguser = 200;
 	static int learninground = 100;
 	static int targetuser = 100;
@@ -32,9 +32,9 @@ public class Main {
 		
 		for(int i = 0; i < learninguser; i++){	//I-sharing grouping
 			if(i > (1-maliciousrate) * learninguser)
-				users[i] = new User(i, i/(learninguser/groupnum), true, 0.5);
+				users[i] = new User(i, i/(learninguser/groupnum), true, "d", 0.5);
 			else
-				users[i] = new User(i, i/(learninguser/groupnum), false, 0.5);
+				users[i] = new User(i, i/(learninguser/groupnum), false, "d", 0.5);
 		}
 		
 		
@@ -70,9 +70,9 @@ public class Main {
 		
 		for(int i = 0; i < targetuser; i++){
 			if(i > (1-maliciousrate) * targetuser)
-				newusers[i] = new User(i, i/(targetuser/groupnum), true, 0.5);
+				newusers[i] = new User(i, i/(targetuser/groupnum), true, "d", 0.5);
 			else
-				newusers[i] = new User(i, i/(targetuser/groupnum), false, 0.5);
+				newusers[i] = new User(i, i/(targetuser/groupnum), false, "d", 0.5);
 		}
 		
 		for(int j = 0; j < targetround; j++){
@@ -113,10 +113,12 @@ public class Main {
 			
 		}
 		
-		//1. I-sharing group을 어떻게 셋업할 것인가
-		//2. 기존 페이퍼는 Malicious가 보이면 마킹하기 로 충분한가... attack이 보이면 out이니까 너무 attackrate에 직접적으로 비례하게 됨
-		//3. MAPE-K는 syntixi를 기반으로 해야겠지만..
-		//4. 
+		
+		//TODO attackrate를 기반으로 어택을 했으면 권한을 하나하나 줄이는 방식. (CUDRN)
+		//TODO 반대로 attack이 쭉 없었으면 상향시키는 개념이 추가되어야 하는가?
+		//TODO maliciousness 안에 레벨을 나눠야 되지 않을까..
+		//TODO 유저에 대한 experience와 그룹 멤버들로부터 가져온 것과의 밸런싱이 현재 없음.
+		//TODO MAPE-K는 syntixi를 기반으로 해야겠지만..
 		
 		
 		

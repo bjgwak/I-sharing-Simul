@@ -7,15 +7,15 @@ public class User {
 	private int id = 0;
 	private int groupNum = 0;
 	private boolean maliciousness = false;
+	private String accessright; 
 	private double trVal = 0.0;
 	
-	public User(int id, int groupnum, boolean malicious, double trVal) {
+	public User(int id, int groupnum, boolean malicious, String access, double trVal) {
 		this.id = id;
 		this.groupNum = groupnum;
 		this.maliciousness = malicious;
-		
+		this.accessright = access;
 		this.trVal = trVal;
-		
 		return;
 	}
 	
@@ -33,6 +33,10 @@ public class User {
 	
 	public double getTrustValue() {
 		return (this.trVal);
+	}
+	
+	public String getAccessRights() {
+		return (this.accessright);
 	}
 	
 	public void putTrustValue(double tr) {
