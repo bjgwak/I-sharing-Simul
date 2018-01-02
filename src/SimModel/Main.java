@@ -19,9 +19,9 @@ public class Main {
 	static double maliciousactingrate = 0.2;
 	
 	static int learninguser = 200;
-	static int learninground = 100;
+	static int learninground = 10;
 	static int targetuser = 100;
-	static int targetround = 200;
+	static int targetround = 1;
 	static int groupnum = 10;
 	
 	static double baserate = 0.5;
@@ -36,11 +36,11 @@ public class Main {
 		
 		for(int i = 0; i < learninguser; i++){
 			if(i > (1-highlymaliciousrate) * learninguser)
-				users[i] = new User(i, i/(targetuser/groupnum), 2, "U", baserate);
+				users[i] = new User(i, i/(learninguser/groupnum), 2, "U", baserate);
 			else if(i > (1-(highlymaliciousrate + maliciousrate)) * learninguser)
-				users[i] = new User(i, i/(targetuser/groupnum), 1, "U", baserate);
+				users[i] = new User(i, i/(learninguser/groupnum), 1, "U", baserate);
 			else
-				users[i] = new User(i, i/(targetuser/groupnum), 0, "U", baserate);
+				users[i] = new User(i, i/(learninguser/groupnum), 0, "U", baserate);
 		}
 		
 		
@@ -133,7 +133,7 @@ public class Main {
 							//System.out.println(i + "th user is demoted");
 						}
 						else{
-							counter_correct++;		//Access rights are appropiriate
+							counter_correct++;		//Access rights are appropriate
 						}
 					}
 					else//sensing benign actions
@@ -147,7 +147,7 @@ public class Main {
 							//System.out.println(i + "th user is demoted");
 						}
 						else{
-							counter_correct++;		//Access rights are appropiriate
+							counter_correct++;		//Access rights are appropriate
 						}
 					}
 					else//sensing benign actions
@@ -179,11 +179,47 @@ public class Main {
 			TrustManager.connect(2);
 			
 			for(int i = 0; i < targetuser; i++){
+				
 				newusers[i].putTrustValue(TrustManager.computeTrustValue("P1", String.valueOf(i)));
-				System.out.println(newusers[i].getTrustValue());
+				
+				String AR;
+				if(i > (1-highlymaliciousrate) * targetuser){ //highlymalicious
+					if(oRandom.nextFloat() < maliciousactingrate*3){		//sensing malicious actions
+						AR = calculateAR(newusers[i], users);
+						if(AR.equals("U") || AR.equals("D") || AR.equals("R")){
+							falsepositive++;
+						}
+						else
+							correct++;
+					}
+					else//sensing benign actions
+						{
+						AR = calculateAR(newusers[i], users);
+						falsepositive++;
+						}
+				}
+				else if(i > (1-(highlymaliciousrate + maliciousrate)) * targetuser){ //malicious
+					if(oRandom.nextFloat() < maliciousactingrate){		//sensing malicious actions
+						AR = calculateAR(newusers[i], users);
+						if(AR.equals("U") || AR.equals("D") || AR.equals("R")){
+							falsepositive++;
+						}
+						else
+							correct++;
+					}
+					else//sensing benign actions
+						{
+						AR = calculateAR(newusers[i], users);
+						falsepositive++;
+						}
+				}
+				else{		//benign user
+					AR = calculateAR(newusers[i], users);
+					correct++;
+				}
 			}
 			if(j % 10 == 0){
-				log.info(j + ": " + (double)counter_falsepositive/(counter_falsepositive + counter_correct));
+				log.info(j + ": " + (double) falsepositive/(falsepositive + correct));
 			}
 			TrustManager.close();
 			//Thread.sleep(10);
@@ -204,6 +240,56 @@ public class Main {
 		log.info("done!");
 		System.exit(0);
 	}
+	
+	public static String calculateAR(User target, User[] groupmembers){
+		
+		double risk = 0;
+		int count = 0;
+		
+		for(int i = 0; i < groupmembers.length; i++){
+			if(target.getGroupNum() == groupmembers[i].getGroupNum()){
+				if(groupmembers[i].getAccessRights().equals("U")){
+					risk += 0.6;
+					count++;
+				}
+				else if(groupmembers[i].getAccessRights().equals("D")){
+					risk += 0.4;
+					count++;
+				}
+				else if(groupmembers[i].getAccessRights().equals("R")){
+					risk += 0.2;
+					count++;
+				}
+				else if(groupmembers[i].getAccessRights().equals("N")){
+					risk += 0.0;
+					count++;
+				}
+				else
+				{
+					log.error("wrong access rights");
+					System.exit(0);
+				}
+				
+			}
+		}
+		
+		double finalrisk = risk /count;
+		
+		//System.out.println(target.getId() + "," + risk + "," + finalrisk);
+		if(finalrisk >= 0.8)
+			return "C";
+		else if(finalrisk >= 0.6)
+			return "U";
+		else if(finalrisk >= 0.4)
+			return "D";
+		else if(finalrisk >= 0.2)
+			return "R";
+		else if(finalrisk >= 0.0)
+			return "N";
+		else
+			return "Error";
+	}
+	
 	
 	public static void demoteAR(User user){
 		if(user.getAccessRights().equals("C")){
