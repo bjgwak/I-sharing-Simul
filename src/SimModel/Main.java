@@ -16,7 +16,7 @@ public class Main {
 	
 	static double highlymaliciousrate = 0.1;
 	static double maliciousrate = 0.1; 
-	static double maliciousactingrate = 0.1;
+	static double maliciousactingrate = 0.2;
 	
 	static int learninguser = 200;
 	static int learninground = 100;
@@ -32,13 +32,15 @@ public class Main {
 
 		log.info("hello!");
 		
-		/*User[] users = new User[learninguser];
+		User[] users = new User[learninguser]; 	//learning for previous users (I-sharing only)
 		
-		for(int i = 0; i < learninguser; i++){	//I-sharing grouping
-			if(i > (1-maliciousrate) * learninguser)
-				users[i] = new User(i, i/(learninguser/groupnum), true, "d", 0.5);
+		for(int i = 0; i < learninguser; i++){
+			if(i > (1-highlymaliciousrate) * learninguser)
+				users[i] = new User(i, i/(targetuser/groupnum), 2, "U", baserate);
+			else if(i > (1-(highlymaliciousrate + maliciousrate)) * learninguser)
+				users[i] = new User(i, i/(targetuser/groupnum), 1, "U", baserate);
 			else
-				users[i] = new User(i, i/(learninguser/groupnum), false, "d", 0.5);
+				users[i] = new User(i, i/(targetuser/groupnum), 0, "U", baserate);
 		}
 		
 		
@@ -48,20 +50,56 @@ public class Main {
 			TrustManager.connect(1);
 			
 			for(int i = 0; i < learninguser; i++){
-				if(oRandom.nextBoolean()){ //interaction possibility==0.5
-					users[i].putTrustValue(TrustManager.computeTrustValue("P1", String.valueOf(i)));
-					if(users[i].getMaliciousness() && oRandom.nextFloat() < maliciousactingrate)
-						TrustManager.putInteraction("P1",String.valueOf(i), Feedback.NEGATIVE, users[i].getTrustValue());
-					else
-						TrustManager.putInteraction("P1",String.valueOf(i), Feedback.POSITIVE, users[i].getTrustValue());	
+				
+				if(oRandom.nextBoolean()){
+					users[i].putTrustValue(TrustManager.computeTrustValue("P1", String.valueOf(i))); 
+					if(i > (1-highlymaliciousrate) * targetuser){ //highlymalicious
+						if(oRandom.nextFloat() < maliciousactingrate*3){		//sensing malicious actions
+							if(users[i].getAccessRights() == "U" || users[i].getAccessRights() == "D" || users[i].getAccessRights() == "R"){ 	//Access rights are too high	
+								TrustManager.putInteraction("P1",String.valueOf(i), Feedback.NEGATIVE, users[i].getTrustValue()); 
+								demoteAR(users[i]);
+								//System.out.println(i + "th user is demoted");
+							}
+							else{
+								TrustManager.putInteraction("P1",String.valueOf(i), Feedback.NEGATIVE, users[i].getTrustValue()); 
+							}
+						}
+						else{
+							TrustManager.putInteraction("P1",String.valueOf(i), Feedback.POSITIVE, users[i].getTrustValue()); 
+
+						}
+							
+					}
+					else if(i > (1-(highlymaliciousrate + maliciousrate)) * targetuser){ //malicious
+						if(oRandom.nextFloat() < maliciousactingrate){		//sensing malicious actions
+							if(users[i].getAccessRights() == "U" || users[i].getAccessRights() == "D" ||users[i].getAccessRights() == "R"){ 	//Access rights are too high	
+								TrustManager.putInteraction("P1",String.valueOf(i), Feedback.NEGATIVE, users[i].getTrustValue()); 
+								demoteAR(users[i]);
+								//System.out.println(i + "th user is demoted");
+							}
+							else{
+								TrustManager.putInteraction("P1",String.valueOf(i), Feedback.NEGATIVE, users[i].getTrustValue()); 
+							}
+						}
+						else{
+							//sensing benign actions
+							TrustManager.putInteraction("P1",String.valueOf(i), Feedback.POSITIVE, users[i].getTrustValue()); 
+						}
+							
+					}
+					else{		//benign user
+						TrustManager.putInteraction("P1",String.valueOf(i), Feedback.POSITIVE, users[i].getTrustValue()); 
+
+					}
 				}
 			}
 			
 			TrustManager.close();
 			Thread.sleep(100);
-			
+			if(j % 10 == 0)
+				log.info(j +" round passed");
 		}
-		*/
+		
 		User[] newusers = new User[targetuser]; 
 		int falsepositive = 0;
 		int falsenegative = 0;
@@ -118,6 +156,31 @@ public class Main {
 				else{		//benign user
 					counter_correct++;
 				}
+			}
+			if(j % 10 == 0){
+				log.info(j + ": " + (double)counter_falsepositive/(counter_falsepositive + counter_correct));
+			}
+			TrustManager.close();
+			//Thread.sleep(10);
+			
+		}
+		
+		for(int i = 0; i < targetuser; i++){		//initialization for I-sharing simulation
+			if(i > (1-highlymaliciousrate) * targetuser)
+				newusers[i] = new User(i, i/(targetuser/groupnum), 2, "U", baserate);
+			else if(i > (1-(highlymaliciousrate + maliciousrate)) * targetuser)
+				newusers[i] = new User(i, i/(targetuser/groupnum), 1, "U", baserate);
+			else
+				newusers[i] = new User(i, i/(targetuser/groupnum), 0, "U", baserate);
+		}
+		
+		for(int j = 0; j < targetround; j++){
+			
+			TrustManager.connect(2);
+			
+			for(int i = 0; i < targetuser; i++){
+				newusers[i].putTrustValue(TrustManager.computeTrustValue("P1", String.valueOf(i)));
+				System.out.println(newusers[i].getTrustValue());
 			}
 			if(j % 10 == 0){
 				log.info(j + ": " + (double)counter_falsepositive/(counter_falsepositive + counter_correct));
