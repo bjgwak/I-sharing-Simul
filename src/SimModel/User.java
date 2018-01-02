@@ -39,6 +39,10 @@ public class User {
 		return (this.accessright);
 	}
 	
+	public void putAccessRights(String ar) {
+		this.accessright = ar;
+	}
+	
 	public void putTrustValue(double tr) {
 		this.trVal = tr;
 	}

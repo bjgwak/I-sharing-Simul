@@ -125,5 +125,26 @@ public class Main {
 		log.info("done!");
 		System.exit(0);
 	}
+	
+	public void demoteAR(User user){
+		if(user.getAccessRights().equals("C")){
+			user.putAccessRights("U");
+		}
+		else if(user.getAccessRights().equals("U")){
+			user.putAccessRights("D");
+		}
+		else if(user.getAccessRights().equals("D")){
+			user.putAccessRights("R");
+		}
+		else if(user.getAccessRights().equals("R")){
+			user.putAccessRights("N");
+		}
+		else if(user.getAccessRights().equals("N")){
+			user.putAccessRights("N");
+		}
+		else{
+			log.error("unknown Access rights in demoteAR");
+		}
+	}
 
 }
