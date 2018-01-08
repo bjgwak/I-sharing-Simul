@@ -22,7 +22,40 @@ public class TrustManager {
 	static Experience nExper;
 	static Experience pExper;
 	
-	
+	public static int getNumofInteraction(String trustor, String trustee) throws Exception{
+		
+		Features feats = new Features();
+		
+		feats.put("id", trustee);
+		
+		Configuration conf = Configuration.getInstance();
+		
+		/* compute a personal trust value */
+		TreeSet<Object> pSrchKeyFNames = conf.getTreeSet("pIntHist.srchKeyFNames");
+		//	pSrchKeyFNames = personal search key feature names
+		String pSrchKey = "";
+		int i = 0;
+		for (Object pSrchKeyFName : pSrchKeyFNames) {
+			pSrchKey += pSrchKeyFName + "=" + feats.get(pSrchKeyFName);
+			if (i < pSrchKeyFNames.size() - 1) {
+				pSrchKey += ",";
+			}
+			i++;
+		}
+		
+		HashSet<Object> pTargetFNames = conf.getHashSet("pTr.targetFNames");
+		//	pTargetFNames = personal target feature names
+
+		
+		pExper = pIhm.extractExperience(pSrchKey, pTargetFNames);
+
+		int nPosInt = pExper.countPositiveInteractions();
+		int nNegInt = pExper.countNegativeInteractions();
+		
+		return nPosInt+nNegInt;
+		
+		
+	}
 	
 	public static double computeTrustValue(String trustor, String trustee) throws Exception {
 		
@@ -150,7 +183,7 @@ public class TrustManager {
 
 		//TODO
 
-		double trVal = nPosInt/(nPosInt+nNegInt+2.0) + (2.0 / (nPosInt + nNegInt + 2.0)) * base;
+		double trVal = nPosInt/(nPosInt+nNegInt+1.0) + (1.0 / (nPosInt + nNegInt + 1.0)) * base;
 		
 		return (trVal);
 	}
