@@ -18,12 +18,11 @@ public class Main {
 	static double maliciousactingrate = 0.4;
 	
 	static int learninguser = 200;
-	static int learninground = 30;
+	static int learninground = 50;
 	static int targetuser = 100;
-	static int targetround = 30;
+	static int targetround = 31;
 	static int groupnum = 10;
-	static double trustthreshold = 0.5;
-	
+	static double trustthreshold = 0.6;
 	static double baserate = 0.5;
 	
 	public static void main(String[] args) throws Exception {
@@ -50,7 +49,7 @@ public class Main {
 			
 			for(int i = 0; i < learninguser; i++){
 				
-				if(oRandom.nextBoolean()){
+				if(oRandom.nextBoolean()){		//P-interaction = 0.5
 					users[i].putTrustValue(TrustManager.computeTrustValue("P1", String.valueOf(i))); 
 					
 					if(i > (1- maliciousrate) * learninguser){ //malicious
@@ -173,14 +172,15 @@ public class Main {
 			for(int i = 0; i < targetuser; i++){
 				
 				newusers[i].putTrustValue(TrustManager.computeTrustValue("P1", String.valueOf(i))); 
-				String AR;
-				if(newusers[i].getTrustValue() == baserate){		//unknown user
+				
+				if(newusers[i].getTrustValue() == baserate){
+					
+					double AR = calculateAR(newusers[i], users);//unknown user
+					
 					if(i > (1- maliciousrate) * targetuser){ //malicious
 						if(oRandom.nextFloat() < maliciousactingrate){		//sensing malicious actions
 							
-							AR = calculateAR(newusers[i], users);
-							
-							if(AR.equals("C")|| AR.equals("U") || AR.equals("D") || AR.equals("R")){		//action is too high
+							if(AR > trustthreshold){		//action is too high
 								falsepositive++;
 								TrustManager.putInteraction("P1",String.valueOf(i), Feedback.NEGATIVE, users[i].getTrustValue()); 
 							}
@@ -190,7 +190,7 @@ public class Main {
 						else//sensing benign actions
 						{
 							AR = calculateAR(newusers[i], users);
-							if(AR.equals("C")|| AR.equals("U") || AR.equals("D") || AR.equals("R")){		//action is too high
+							if(AR > trustthreshold){		//action is too high
 								falsepositive++;
 							}
 							else{
@@ -201,13 +201,21 @@ public class Main {
 						}
 					}
 					else{		//benign user
-						AR = calculateAR(newusers[i], users);
+						if(AR > trustthreshold){
 						truenegative++;
+						}
+						else{
+							falsenegative++;
+						}
+							
 						TrustManager.putInteraction("P1",String.valueOf(i), Feedback.POSITIVE, users[i].getTrustValue()); 
 					}
 				}
 				else {//known user
 					if(i > (1- maliciousrate) * targetuser){ //malicious
+						
+						double AR = calculateAR(newusers[i], users);//unknown user
+						
 						if(oRandom.nextFloat() < maliciousactingrate){		//sensing malicious actions
 							
 							
@@ -257,8 +265,8 @@ public class Main {
 		
 		
 		//TODO 반대로 attack이 쭉 없었으면 상향시키는 개념이 추가되어야 하는가?
+		//TODO magic numbers
 		//TODO 유저에 대한 experience와 그룹 멤버들로부터 가져온 것과의 밸런싱이 현재 없음.
-		//TODO MAPE-K는 syntixi를 기반으로 해야겠지만..
 		
 		
 		
@@ -266,7 +274,7 @@ public class Main {
 		System.exit(0);
 	}
 	
-	public static String calculateAR(User target, User[] groupmembers){
+	public static double calculateAR(User target, User[] groupmembers){
 		
 		double risk = 0;
 		int count = 0;
@@ -283,10 +291,7 @@ public class Main {
 		double finalrisk = risk /count;
 		//System.out.println(target.getId() + "'s risk = " + finalrisk);
 		//System.out.println(target.getId() + "," + risk + "," + finalrisk);
-		if(finalrisk >= 0.5)
-			return "C";
-		else
-			return "N";
+		return finalrisk;
 	}
 	
 	
