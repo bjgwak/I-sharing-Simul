@@ -15,14 +15,14 @@ public class Main {
 	
 	
 	static double maliciousrate = 0.2; 
-	static double maliciousactingrate = 0.4;
+	static double maliciousactingrate = 0.2;
 	
 	static int learninguser = 200;
-	static int learninground = 50;
+	static int learninground = 30;
 	static int targetuser = 100;
 	static int targetround = 31;
 	static int groupnum = 10;
-	static double trustthreshold = 0.6;
+	static double trustthreshold = 0.50;
 	static double baserate = 0.5;
 	
 	public static void main(String[] args) throws Exception {
@@ -143,9 +143,9 @@ public class Main {
 				}
 			}
 			if(j % 5 == 0){
-				System.out.println(j + "PPV: " + (double)counter_truepositive/(counter_falsepositive+ counter_truepositive));
+				//System.out.println(j + "PPV: " + (double)counter_truepositive/(counter_falsepositive+ counter_truepositive));
 				//System.out.println(j + "NPV: " + (double)counter_truenegative/(counter_falsenegative+ counter_truenegative));
-				//System.out.println(j + "ACC: " + (double)(counter_truepositive+counter_truenegative)/(counter_falsepositive+ counter_truepositive+counter_falsenegative+counter_truenegative));
+				System.out.println(j + "ACC: " + (double)(counter_truepositive+counter_truenegative)/(counter_falsepositive+ counter_truepositive+counter_falsenegative+counter_truenegative));
 			}
 			//TrustManager.close();
 			//Thread.sleep(10);
@@ -253,7 +253,9 @@ public class Main {
 				}
 			}
 			if(j % 5 == 0){
-				System.out.println(j + "PPV: " + (double) truepositive/(falsepositive + truepositive));
+				//System.out.println(j + "PPV: " + (double) truepositive/(falsepositive + truepositive));
+				System.out.println(j + "ACC: " + (double)(truepositive+truenegative)/(falsepositive+ truepositive+falsenegative+truenegative));
+				
 			}
 			TrustManager.close();
 			//Thread.sleep(10);
