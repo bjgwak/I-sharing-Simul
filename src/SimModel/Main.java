@@ -15,14 +15,14 @@ public class Main {
 	
 	
 	static double maliciousrate = 0.2; 
-	static double maliciousactingrate = 0.2;
+	static double maliciousactingrate = 0.4;
 	
 	static int learninguser = 200;
 	static int learninground = 30;
 	static int targetuser = 100;
 	static int targetround = 31;
 	static int groupnum = 10;
-	static double trustthreshold = 0.50;
+	static double trustthreshold = 0.6;
 	static double baserate = 0.5;
 	
 	public static void main(String[] args) throws Exception {
@@ -115,7 +115,7 @@ public class Main {
 				if(i > (1-maliciousrate) * targetuser){ //malicious
 					if(oRandom.nextFloat() < maliciousactingrate){		//sensing malicious actions
 						if(AR.equals("C")|| AR.equals("U") || AR.equals("D") || AR.equals("R")){ 	//Access rights are too high	
-							counter_falsepositive++;
+							counter_falsenegative++;
 							demoteAR(newusers[i]);
 							//System.out.println(i + "th user is demoted");
 						}
@@ -125,7 +125,7 @@ public class Main {
 					}
 					else{//sensing benign actions
 						if(AR.equals("C")|| AR.equals("U") || AR.equals("D") || AR.equals("R")){ 	//Access rights are too high	
-							counter_falsepositive++;
+							counter_falsenegative++;
 							//System.out.println(i + "th user is demoted");
 						}
 						else{
@@ -139,13 +139,13 @@ public class Main {
 						counter_truenegative++;
 					}
 					else
-						counter_falsenegative++;
+						counter_falsepositive++;
 				}
 			}
 			if(j % 5 == 0){
-				//System.out.println(j + "PPV: " + (double)counter_truepositive/(counter_falsepositive+ counter_truepositive));
+				System.out.println(j + "SEN: " + (double)counter_truepositive/(counter_falsenegative+ counter_truepositive));
 				//System.out.println(j + "NPV: " + (double)counter_truenegative/(counter_falsenegative+ counter_truenegative));
-				System.out.println(j + "ACC: " + (double)(counter_truepositive+counter_truenegative)/(counter_falsepositive+ counter_truepositive+counter_falsenegative+counter_truenegative));
+				//System.out.println(j + "ACC: " + (double)(counter_truepositive+counter_truenegative)/(counter_falsepositive+ counter_truepositive+counter_falsenegative+counter_truenegative));
 			}
 			//TrustManager.close();
 			//Thread.sleep(10);
@@ -181,7 +181,7 @@ public class Main {
 						if(oRandom.nextFloat() < maliciousactingrate){		//sensing malicious actions
 							
 							if(AR > trustthreshold){		//action is too high
-								falsepositive++;
+								falsenegative++;
 								TrustManager.putInteraction("P1",String.valueOf(i), Feedback.NEGATIVE, users[i].getTrustValue()); 
 							}
 							else
@@ -191,10 +191,10 @@ public class Main {
 						{
 							AR = calculateAR(newusers[i], users);
 							if(AR > trustthreshold){		//action is too high
-								falsepositive++;
+								falsenegative++;
 							}
 							else{
-								truenegative++;
+								truepositive++;
 							}
 							TrustManager.putInteraction("P1",String.valueOf(i), Feedback.POSITIVE, users[i].getTrustValue()); 
 							
@@ -205,7 +205,7 @@ public class Main {
 						truenegative++;
 						}
 						else{
-							falsenegative++;
+							falsepositive++;
 						}
 							
 						TrustManager.putInteraction("P1",String.valueOf(i), Feedback.POSITIVE, users[i].getTrustValue()); 
@@ -220,7 +220,7 @@ public class Main {
 							
 							
 							if(newusers[i].getTrustValue() > trustthreshold){		
-								falsepositive++;
+								falsenegative++;
 							}
 							else{
 								truepositive++;
@@ -231,7 +231,7 @@ public class Main {
 						else//sensing benign actions
 						{
 							if(newusers[i].getTrustValue() > trustthreshold){		
-								falsepositive++;
+								falsenegative++;
 							}
 							else{
 								truepositive++;
@@ -245,7 +245,7 @@ public class Main {
 							truenegative++;
 						}
 						else{
-							falsenegative++;
+							falsepositive++;
 						}
 						
 						TrustManager.putInteraction("P1",String.valueOf(i), Feedback.POSITIVE, users[i].getTrustValue()); 
@@ -253,8 +253,8 @@ public class Main {
 				}
 			}
 			if(j % 5 == 0){
-				//System.out.println(j + "PPV: " + (double) truepositive/(falsepositive + truepositive));
-				System.out.println(j + "ACC: " + (double)(truepositive+truenegative)/(falsepositive+ truepositive+falsenegative+truenegative));
+				System.out.println(j + "SEN: " + (double) truepositive/(falsenegative + truepositive));
+				//System.out.println(j + "ACC: " + (double)(truepositive+truenegative)/(falsepositive+ truepositive+falsenegative+truenegative));
 				
 			}
 			TrustManager.close();
