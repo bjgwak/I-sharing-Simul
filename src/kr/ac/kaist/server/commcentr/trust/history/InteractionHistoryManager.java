@@ -186,6 +186,14 @@ public class InteractionHistoryManager {
 		return;
 	}
 	
+	public void reset() throws Exception {
+		Statement stmt = this.conn.createStatement();
+		
+		stmt.execute("TRUNCATE TABLE " + this.table);
+		
+		return;
+	}
+	
 	public void close() throws Exception {
 		this.table = null;
 		this.conn.close();

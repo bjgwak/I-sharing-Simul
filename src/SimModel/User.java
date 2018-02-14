@@ -9,13 +9,17 @@ public class User {
 	private int maliciousness = 0;
 	private String accessright; 
 	private double trVal = 0.0;
+	private int interval = 0;
+	private int interactionLength = 0;
 	
-	public User(int id, int groupnum, int malicious, String access, double trVal) {
+	public User(int id, int groupnum, int malicious, String access, double trVal, int intv, int length) {
 		this.id = id;
 		this.groupNum = groupnum;
 		this.maliciousness = malicious;
 		this.accessright = access;
 		this.trVal = trVal;
+		this.interval = intv;
+		this.interactionLength = length;
 		return;
 	}
 	
@@ -45,6 +49,22 @@ public class User {
 	
 	public void putTrustValue(double tr) {
 		this.trVal = tr;
+	}
+	public int getInteractionLength() {
+		return this.interactionLength;
+	}
+	public int getInterval() {
+		return (this.interval);
+	}
+	
+	public void putInteractionLength(int length) {
+		this.interactionLength = length;
+	}
+	
+	public void putInterval(int intv) {
+		this.interval = intv;
+		
+		
 	}
 
 }

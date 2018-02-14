@@ -1,7 +1,6 @@
 package SimModel;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 
 import TrustManager.TrustCalculator;
 import TrustManager.TrustManager;
@@ -15,30 +14,34 @@ public class Main {
 	
 	
 	static double maliciousrate = 0.2; 
-	static double maliciousactingrate = 0.4;
+	static double maliciousactingrate = 0.05;
+	static int maliciousinterval = 1;
+	static int benigninterval = 10;
+	static int maliciouslength = 20;
+	static int benignlength = 3;
 	
 	static int learninguser = 200;
-	static int learninground = 30;
+	static int learninground = 1;
 	static int targetuser = 100;
-	static int targetround = 31;
+	static int timeslot = 1000;
 	static int groupnum = 10;
-	static double trustthreshold = 0.6;
+	static double trustthreshold = 0.5;
+	static double interactionprob = 0.1;
 	static double baserate = 0.5;
+	static int queuesize=1;
 	
 	public static void main(String[] args) throws Exception {
 		
-		 Random oRandom = new Random();
+		Random oRandom = new Random();
 
-		
-		
 		User[] users = new User[learninguser]; 	//learning for previous users (I-sharing only)
 		
 		for(int i = 0; i < learninguser; i++){
 			
 			if(i > (1 - maliciousrate) * learninguser)
-				users[i] = new User(i, i/(learninguser/groupnum), 1, "U", baserate);
+				users[i] = new User(i, i/(learninguser/groupnum), 1, "U", baserate, maliciousinterval, maliciouslength);
 			else
-				users[i] = new User(i, i/(learninguser/groupnum), 0, "U", baserate);
+				users[i] = new User(i, i/(learninguser/groupnum), 0, "U", baserate, benigninterval, benignlength);
 		}
 		
 		
@@ -85,6 +88,11 @@ public class Main {
 		System.out.println("==========EOT==========");
 		
 		User[] newusers = new User[targetuser]; 
+		int[] status = new int[targetuser];
+		int[] markedasmalicious = new int[targetuser];
+		int[] settimeclock = new int[targetuser];
+		int[] authenticated = new int[targetuser];
+ 		int queueindex= 0;
 		int falsepositive = 0;
 		int falsenegative = 0;
 		int truepositive = 0;
@@ -95,54 +103,92 @@ public class Main {
 		int counter_truepositive = 0;
 		int counter_truenegative = 0;
 		
+		int final_counter_falsepositive = 0;
+		int final_counter_falsenegative = 0;
+		int final_counter_truepositive = 0;
+		int final_counter_truenegative = 0;
+		
 		for(int i = 0; i < targetuser; i++){
-			if(i > (1-maliciousrate) * targetuser)
-				newusers[i] = new User(i, i/(targetuser/groupnum), 1, "U", baserate);
+			if(oRandom.nextFloat() < maliciousrate)
+				newusers[i] = new User(i, i/(targetuser/groupnum), 1, "U", baserate, maliciousinterval, maliciouslength);
 			else
-				newusers[i] = new User(i, i/(targetuser/groupnum), 0, "U", baserate);
+				newusers[i] = new User(i, i/(targetuser/groupnum), 0, "U", baserate, benigninterval, benignlength);
 		}
 		
 		
-		for(int j = 0; j < targetround; j++){
+		Loop1: for(int j = 1; j < timeslot; j++){
 			
 			//TrustManager.connect(2);
 			
-			for(int i = 0; i < targetuser; i++){
-				
-				String AR = newusers[i].getAccessRights();
-				
-				
-				if(i > (1-maliciousrate) * targetuser){ //malicious
-					if(oRandom.nextFloat() < maliciousactingrate){		//sensing malicious actions
-						if(AR.equals("C")|| AR.equals("U") || AR.equals("D") || AR.equals("R")){ 	//Access rights are too high	
-							counter_falsenegative++;
-							demoteAR(newusers[i]);
-							//System.out.println(i + "th user is demoted");
+			Loop2: for(int i = 0; i < targetuser; i++){
+				if(markedasmalicious[i] == 0) {		//not malicious
+						if(settimeclock[i] == 0) {	//interaction interval is ready
+							if(oRandom.nextFloat() < interactionprob || status[i] != 0) {		//reflects interaction probability			
+								if(queueindex == queuesize && status[i] == 0) {	//queue is full and not interact with him
+									continue;
+								}
+								else if(queueindex < queuesize && status[i] == 0) {		//queue is not full
+									queueindex++;
+									status[i] = j;
+								}
+								
+								//System.out.println(i + "is in the queue!");
+								if(newusers[i].getInteractionLength() > j - status[i]) {		//in the interaction time
+									String AR = newusers[i].getAccessRights();
+									//System.out.println(i + "tries to interact!" + j + ":" + status[i]);
+									if(newusers[i].getMaliciousness() == 1){ //malicious
+										if(oRandom.nextFloat() < maliciousactingrate){		//sensing malicious actions
+											if(AR.equals("C")|| AR.equals("U") || AR.equals("D") || AR.equals("R")){ 	//Access rights are too high	
+												counter_falsenegative++;
+												demoteAR(newusers[i]);
+												//System.out.println(i + "th user is demoted");
+												markedasmalicious[i] = 1;
+												//System.out.println(i + "is marked as malicious: " + j);
+												queueindex--;
+											}
+											else{
+												counter_truepositive++;		//Access rights are appropriate
+											}
+										}
+										else{//sensing benign actions
+											if(AR.equals("C")|| AR.equals("U") || AR.equals("D") || AR.equals("R")){ 	//Access rights are too high	
+												counter_falsenegative++;
+												//System.out.println(i + "th user is demoted");
+											}
+											else{
+												counter_truepositive++;		//Access rights are appropriate
+											}
+										}
+											
+									}
+									else{		//benign user
+										if(AR.equals("C")|| AR.equals("U") || AR.equals("D") || AR.equals("R")){
+											counter_truenegative++;
+										}
+										else
+											counter_falsepositive++;
+									}
+								}
+								else {	//all interaction is done
+									queueindex--;
+									status[i] = 0;
+									settimeclock[i] = newusers[i].getInterval();
+									
+								}
+							}
+							else {	//decide to not interact 
+								
+							}
 						}
-						else{
-							counter_truepositive++;		//Access rights are appropriate
+						else {		//time interval is working
+							settimeclock[i]--;
 						}
-					}
-					else{//sensing benign actions
-						if(AR.equals("C")|| AR.equals("U") || AR.equals("D") || AR.equals("R")){ 	//Access rights are too high	
-							counter_falsenegative++;
-							//System.out.println(i + "th user is demoted");
-						}
-						else{
-							counter_truepositive++;		//Access rights are appropriate
-						}
-					}
-						
 				}
-				else{		//benign user
-					if(AR.equals("C")|| AR.equals("U") || AR.equals("D") || AR.equals("R")){
-						counter_truenegative++;
-					}
-					else
-						counter_falsepositive++;
+				else {		//marked as malicious
+					counter_truepositive++;
 				}
 			}
-			if(j % 5 == 0){
+			if(j % 100 == 0){
 				System.out.println(j + "SEN: " + (double)counter_truepositive/(counter_falsenegative+ counter_truepositive));
 				//System.out.println(j + "NPV: " + (double)counter_truenegative/(counter_falsenegative+ counter_truenegative));
 				//System.out.println(j + "ACC: " + (double)(counter_truepositive+counter_truenegative)/(counter_falsepositive+ counter_truepositive+counter_falsenegative+counter_truenegative));
@@ -151,124 +197,123 @@ public class Main {
 			//Thread.sleep(10);
 			
 		}
+		
 		System.out.println("========EOB==========");
 		//end of bailey
 		
 		
 		
-		for(int i = 0; i < targetuser; i++){		//initialization for I-sharing simulation
-			if(i > (1-maliciousrate) * targetuser)
-				newusers[i] = new User(i, i/(targetuser/groupnum), 1, "U", baserate);
+		for(int i = 0; i < targetuser; i++){
+			if(oRandom.nextFloat() < maliciousrate)
+				newusers[i] = new User(i, i/(targetuser/groupnum), 1, "U", baserate, maliciousinterval, maliciouslength);
 			else
-				newusers[i] = new User(i, i/(targetuser/groupnum), 0, "U", baserate);
+				newusers[i] = new User(i, i/(targetuser/groupnum), 0, "U", baserate, benigninterval, benignlength);
 		}
 		
 		
-		
-		for(int j = 0; j < targetround; j++){		//Trust 기준을 변경하기
-			
-			TrustManager.connect(2);
+		TrustManager.connect(2);
+		for(int j = 1; j < timeslot; j++){
 			
 			for(int i = 0; i < targetuser; i++){
-				
-				newusers[i].putTrustValue(TrustManager.computeTrustValue("P1", String.valueOf(i))); 
-				
-				if(newusers[i].getTrustValue() == baserate){
-					
-					double AR = calculateAR(newusers[i], users);//unknown user
-					
-					if(i > (1- maliciousrate) * targetuser){ //malicious
-						if(oRandom.nextFloat() < maliciousactingrate){		//sensing malicious actions
-							
-							if(AR > trustthreshold){		//action is too high
-								falsenegative++;
-								TrustManager.putInteraction("P1",String.valueOf(i), Feedback.NEGATIVE, users[i].getTrustValue()); 
+				if(markedasmalicious[i] == 0) {		//not malicious
+						if(settimeclock[i] == 0) {	//interaction interval is ready
+							if(oRandom.nextFloat() < interactionprob || status[i] != 0) {		//reflects interaction probability			
+								if(queueindex == queuesize && status[i] == 0) {	//queue is full and not interact with him
+									continue;
+								}
+								else if(queueindex < queuesize && status[i] == 0) {		//queue is not full
+									queueindex++;
+									status[i] = j;
+								}
+								
+								newusers[i].putTrustValue(TrustManager.computeTrustValue("P1", String.valueOf(i))); 
+								
+																
+								//System.out.println(i + "is in the queue!");
+								if(newusers[i].getInteractionLength() > j - status[i]) {		//in the interaction time
+									
+									//double AR = calculateAR(newusers[i], users);//unknown user
+									
+									double AR = newusers[i].getTrustValue();
+									//System.out.println(i + "tries to interact!" + j + ":" + status[i]);
+									if(newusers[i].getMaliciousness() == 1){ //malicious
+										if(oRandom.nextFloat() < maliciousactingrate){		//sensing malicious actions
+											if(AR > trustthreshold){ 	//Access rights are too high	
+												counter_falsenegative++;
+												
+												//System.out.println(i + "th user is demoted");
+											}
+											else{
+												counter_truepositive++;
+												queueindex--;
+												status[i] = 0;
+												settimeclock[i] = newusers[i].getInterval();
+												//System.out.println(i + "'s trust value is too low: " + j);
+											}
+											TrustManager.putInteraction("P1",String.valueOf(i), Feedback.NEGATIVE, users[i].getTrustValue()); 
+										}
+										else{//sensing benign actions
+											if(AR > trustthreshold){ 	//Access rights are too high	
+												counter_falsenegative++;
+												//System.out.println(i + "th user is demoted");
+											}
+											else{
+												counter_truepositive++;		//Access rights are appropriate
+												queueindex--;
+												status[i] = 0;
+												settimeclock[i] = newusers[i].getInterval();
+												//System.out.println(i + "'s trust value is too low: " + j);
+											}
+											TrustManager.putInteraction("P1",String.valueOf(i), Feedback.POSITIVE, users[i].getTrustValue()); 
+										}
+									}
+									else{		//benign user
+										if(AR > trustthreshold){
+											counter_truenegative++;
+										}
+										else
+											counter_falsepositive++;
+										TrustManager.putInteraction("P1",String.valueOf(i), Feedback.POSITIVE, users[i].getTrustValue()); 
+									}
+								}
+								else {	//all interaction is done
+									queueindex--;
+									status[i] = 0;
+									settimeclock[i] = newusers[i].getInterval();
+									
+								}
 							}
-							else
-								truepositive++;
-						}
-						else//sensing benign actions
-						{
-							AR = calculateAR(newusers[i], users);
-							if(AR > trustthreshold){		//action is too high
-								falsenegative++;
+							else {	//decide to not interact 
+								
 							}
-							else{
-								truepositive++;
-							}
-							TrustManager.putInteraction("P1",String.valueOf(i), Feedback.POSITIVE, users[i].getTrustValue()); 
-							
 						}
-					}
-					else{		//benign user
-						if(AR > trustthreshold){
-						truenegative++;
+						else {		//time interval is working
+							settimeclock[i]--;
 						}
-						else{
-							falsepositive++;
-						}
-							
-						TrustManager.putInteraction("P1",String.valueOf(i), Feedback.POSITIVE, users[i].getTrustValue()); 
-					}
 				}
-				else {//known user
-					if(i > (1- maliciousrate) * targetuser){ //malicious
-						
-						double AR = calculateAR(newusers[i], users);//unknown user
-						
-						if(oRandom.nextFloat() < maliciousactingrate){		//sensing malicious actions
-							
-							
-							if(newusers[i].getTrustValue() > trustthreshold){		
-								falsenegative++;
-							}
-							else{
-								truepositive++;
-							}
-							
-							TrustManager.putInteraction("P1",String.valueOf(i), Feedback.NEGATIVE, users[i].getTrustValue()); 
-						}
-						else//sensing benign actions
-						{
-							if(newusers[i].getTrustValue() > trustthreshold){		
-								falsenegative++;
-							}
-							else{
-								truepositive++;
-							}
-							
-							TrustManager.putInteraction("P1",String.valueOf(i), Feedback.NEGATIVE, users[i].getTrustValue()); 
-						}
-					}
-					else{		//benign user
-						if(newusers[i].getTrustValue() > trustthreshold){		
-							truenegative++;
-						}
-						else{
-							falsepositive++;
-						}
-						
-						TrustManager.putInteraction("P1",String.valueOf(i), Feedback.POSITIVE, users[i].getTrustValue()); 
-					}
+				else {		//marked as malicious
+					counter_truepositive++;
 				}
 			}
-			if(j % 5 == 0){
-				System.out.println(j + "SEN: " + (double) truepositive/(falsenegative + truepositive));
-				//System.out.println(j + "ACC: " + (double)(truepositive+truenegative)/(falsepositive+ truepositive+falsenegative+truenegative));
-				
+			if(j % 100 == 0){
+				System.out.println(j + "SEN: " + (double)counter_truepositive/(counter_falsenegative+ counter_truepositive));
+				//System.out.println(j + "NPV: " + (double)counter_truenegative/(counter_falsenegative+ counter_truenegative));
+				//System.out.println(j + "ACC: " + (double)(counter_truepositive+counter_truenegative)/(counter_falsepositive+ counter_truepositive+counter_falsenegative+counter_truenegative));
 			}
-			TrustManager.close();
+			//TrustManager.close();
 			//Thread.sleep(10);
 			
 		}
 		
 		
+		TrustManager.reset();
+		TrustManager.connect(1);
+		TrustManager.reset();
+		TrustManager.close();
 		
-		
-		
-		//TODO 반대로 attack이 쭉 없었으면 상향시키는 개념이 추가되어야 하는가?
+		//TODO 諛섎�濡� attack�씠 彛� �뾾�뿀�쑝硫� �긽�뼢�떆�궎�뒗 媛쒕뀗�씠 異붽��릺�뼱�빞 �븯�뒗媛�?
 		//TODO magic numbers
-		//TODO 유저에 대한 experience와 그룹 멤버들로부터 가져온 것과의 밸런싱이 현재 없음.
+		//TODO �쑀���뿉 ���븳 experience�� 洹몃９ 硫ㅻ쾭�뱾濡쒕��꽣 媛��졇�삩 寃껉낵�쓽 諛몃윴�떛�씠 �쁽�옱 �뾾�쓬.
 		
 		
 		

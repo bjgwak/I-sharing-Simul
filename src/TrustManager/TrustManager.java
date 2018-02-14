@@ -236,6 +236,20 @@ public class TrustManager {
 		
 		
 	}
+	
+public static void reset(){
+		
+		try {
+			pIhm.reset();
+			nIhm.reset();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		
+	}
+	
 	public static void close(){
 		
 		try {
