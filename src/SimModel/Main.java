@@ -23,7 +23,7 @@ public class Main {
 	static int learninguser = 200;
 	static int learninground = 1;
 	static int targetuser = 100;
-	static int timeslot = 1000;
+	static int timeslot = 500;
 	static int groupnum = 10;
 	static double trustthreshold = 0.5;
 	static double interactionprob = 0.1;
@@ -107,6 +107,8 @@ public class Main {
 		int final_counter_falsenegative = 0;
 		int final_counter_truepositive = 0;
 		int final_counter_truenegative = 0;
+		
+		int bailey_avail = 0;
 		
 		for(int i = 0; i < targetuser; i++){
 			if(oRandom.nextFloat() < maliciousrate)
@@ -235,6 +237,11 @@ public class Main {
 									//double AR = calculateAR(newusers[i], users);//unknown user
 									
 									double AR = newusers[i].getTrustValue();
+									
+									if(AR == baserate) {
+										AR = calculateAR(newusers[i], users);
+									}
+								
 									//System.out.println(i + "tries to interact!" + j + ":" + status[i]);
 									if(newusers[i].getMaliciousness() == 1){ //malicious
 										if(oRandom.nextFloat() < maliciousactingrate){		//sensing malicious actions
