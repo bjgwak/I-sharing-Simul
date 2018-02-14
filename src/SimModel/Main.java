@@ -21,9 +21,9 @@ public class Main {
 	static int benignlength = 3;
 	
 	static int learninguser = 200;
-	static int learninground = 1;
+	static int learninground = 20;
 	static int targetuser = 100;
-	static int timeslot = 500;
+	static int timeslot = 1000;
 	static int groupnum = 10;
 	static double trustthreshold = 0.5;
 	static double interactionprob = 0.1;
@@ -203,6 +203,13 @@ public class Main {
 		System.out.println("========EOB==========");
 		//end of bailey
 		
+		newusers = new User[targetuser]; 
+		status = new int[targetuser];
+		markedasmalicious = new int[targetuser];
+		settimeclock = new int[targetuser];
+		authenticated = new int[targetuser];
+ 		queueindex= 0;
+		
 		
 		
 		for(int i = 0; i < targetuser; i++){
@@ -240,6 +247,7 @@ public class Main {
 									
 									if(AR == baserate) {
 										AR = calculateAR(newusers[i], users);
+										newusers[i].putTrustValue(AR);
 									}
 								
 									//System.out.println(i + "tries to interact!" + j + ":" + status[i]);
