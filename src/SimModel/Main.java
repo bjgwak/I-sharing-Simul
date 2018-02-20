@@ -5,7 +5,11 @@ package SimModel;
 import TrustManager.TrustCalculator;
 import TrustManager.TrustManager;
 import kr.ac.kaist.server.commcentr.trust.history.Feedback;
+
+import java.util.Arrays;
 import java.util.Random;
+
+import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils.Collections;
 
 
 
@@ -14,11 +18,11 @@ public class Main {
 	
 	
 	static double maliciousrate = 0.2; 
-	static double maliciousactingrate = 0.05;
+	static double maliciousactingrate = 0.4;
 	static int maliciousinterval = 1;
 	static int benigninterval = 10;
 	static int maliciouslength = 20;
-	static int benignlength = 3;
+	static int benignlength = 5;
 	
 	static int learninguser = 200;
 	static int learninground = 20;
@@ -26,7 +30,7 @@ public class Main {
 	static int timeslot = 1000;
 	static int groupnum = 10;
 	static double trustthreshold = 0.5;
-	static double interactionprob = 0.1;
+	static double interactionprob = 0.5;
 	static double baserate = 0.5;
 	static int queuesize=1;
 	
@@ -109,23 +113,26 @@ public class Main {
 		int final_counter_truenegative = 0;
 		
 		int bailey_avail = 0;
+		int TARAS_avail = 0;
 		
 		for(int i = 0; i < targetuser; i++){
-			if(oRandom.nextFloat() < maliciousrate)
+			if(i > (1-maliciousrate) * targetuser)
 				newusers[i] = new User(i, i/(targetuser/groupnum), 1, "U", baserate, maliciousinterval, maliciouslength);
 			else
 				newusers[i] = new User(i, i/(targetuser/groupnum), 0, "U", baserate, benigninterval, benignlength);
 		}
 		
+		java.util.Collections.shuffle(Arrays.asList(newusers));		//shuffle the order of users to interact
 		
 		Loop1: for(int j = 1; j < timeslot; j++){
 			
 			//TrustManager.connect(2);
 			
 			Loop2: for(int i = 0; i < targetuser; i++){
+				
 				if(markedasmalicious[i] == 0) {		//not malicious
 						if(settimeclock[i] == 0) {	//interaction interval is ready
-							if(oRandom.nextFloat() < interactionprob || status[i] != 0) {		//reflects interaction probability			
+							if(oRandom.nextFloat() < interactionprob || status[i] != 0 || true) {		//reflects interaction probability			
 								if(queueindex == queuesize && status[i] == 0) {	//queue is full and not interact with him
 									continue;
 								}
@@ -166,6 +173,7 @@ public class Main {
 									else{		//benign user
 										if(AR.equals("C")|| AR.equals("U") || AR.equals("D") || AR.equals("R")){
 											counter_truenegative++;
+											bailey_avail++;
 										}
 										else
 											counter_falsepositive++;
@@ -191,7 +199,7 @@ public class Main {
 				}
 			}
 			if(j % 100 == 0){
-				System.out.println(j + "SEN: " + (double)counter_truepositive/(counter_falsenegative+ counter_truepositive));
+				//System.out.println(j + "SEN: " + (double)counter_truepositive/(counter_falsenegative+ counter_truepositive) + ": " + (double) bailey_avail / j);
 				//System.out.println(j + "NPV: " + (double)counter_truenegative/(counter_falsenegative+ counter_truenegative));
 				//System.out.println(j + "ACC: " + (double)(counter_truepositive+counter_truenegative)/(counter_falsepositive+ counter_truepositive+counter_falsenegative+counter_truenegative));
 			}
@@ -199,8 +207,8 @@ public class Main {
 			//Thread.sleep(10);
 			
 		}
-		
-		System.out.println("========EOB==========");
+		//System.out.println((double)bailey_avail / timeslot);
+		//System.out.println("========EOB==========");
 		//end of bailey
 		
 		newusers = new User[targetuser]; 
@@ -213,12 +221,13 @@ public class Main {
 		
 		
 		for(int i = 0; i < targetuser; i++){
-			if(oRandom.nextFloat() < maliciousrate)
+			if(i > (1-maliciousrate) * targetuser)
 				newusers[i] = new User(i, i/(targetuser/groupnum), 1, "U", baserate, maliciousinterval, maliciouslength);
 			else
 				newusers[i] = new User(i, i/(targetuser/groupnum), 0, "U", baserate, benigninterval, benignlength);
 		}
 		
+		java.util.Collections.shuffle(Arrays.asList(newusers));
 		
 		TrustManager.connect(2);
 		for(int j = 1; j < timeslot; j++){
@@ -226,7 +235,7 @@ public class Main {
 			for(int i = 0; i < targetuser; i++){
 				if(markedasmalicious[i] == 0) {		//not malicious
 						if(settimeclock[i] == 0) {	//interaction interval is ready
-							if(oRandom.nextFloat() < interactionprob || status[i] != 0) {		//reflects interaction probability			
+							if(oRandom.nextFloat() < interactionprob || status[i] != 0 || true) {		//reflects interaction probability			
 								if(queueindex == queuesize && status[i] == 0) {	//queue is full and not interact with him
 									continue;
 								}
@@ -254,29 +263,32 @@ public class Main {
 									if(newusers[i].getMaliciousness() == 1){ //malicious
 										if(oRandom.nextFloat() < maliciousactingrate){		//sensing malicious actions
 											if(AR > trustthreshold){ 	//Access rights are too high	
-												counter_falsenegative++;
+												falsenegative++;
 												
 												//System.out.println(i + "th user is demoted");
 											}
 											else{
-												counter_truepositive++;
+												truepositive++;
 												queueindex--;
 												status[i] = 0;
 												settimeclock[i] = newusers[i].getInterval();
+												TARAS_avail++;
 												//System.out.println(i + "'s trust value is too low: " + j);
 											}
 											TrustManager.putInteraction("P1",String.valueOf(i), Feedback.NEGATIVE, users[i].getTrustValue()); 
 										}
 										else{//sensing benign actions
 											if(AR > trustthreshold){ 	//Access rights are too high	
-												counter_falsenegative++;
+												falsenegative++;
+												
 												//System.out.println(i + "th user is demoted");
 											}
 											else{
-												counter_truepositive++;		//Access rights are appropriate
+												truepositive++;		//Access rights are appropriate
 												queueindex--;
 												status[i] = 0;
 												settimeclock[i] = newusers[i].getInterval();
+												TARAS_avail++;
 												//System.out.println(i + "'s trust value is too low: " + j);
 											}
 											TrustManager.putInteraction("P1",String.valueOf(i), Feedback.POSITIVE, users[i].getTrustValue()); 
@@ -284,10 +296,14 @@ public class Main {
 									}
 									else{		//benign user
 										if(AR > trustthreshold){
-											counter_truenegative++;
+											truenegative++;
+											TARAS_avail++;
 										}
-										else
-											counter_falsepositive++;
+										else {
+											falsepositive++;
+											TARAS_avail++;
+										}
+											
 										TrustManager.putInteraction("P1",String.valueOf(i), Feedback.POSITIVE, users[i].getTrustValue()); 
 									}
 								}
@@ -311,24 +327,26 @@ public class Main {
 				}
 			}
 			if(j % 100 == 0){
-				System.out.println(j + "SEN: " + (double)counter_truepositive/(counter_falsenegative+ counter_truepositive));
+				
 				//System.out.println(j + "NPV: " + (double)counter_truenegative/(counter_falsenegative+ counter_truenegative));
 				//System.out.println(j + "ACC: " + (double)(counter_truepositive+counter_truenegative)/(counter_falsepositive+ counter_truepositive+counter_falsenegative+counter_truenegative));
 			}
+			
 			//TrustManager.close();
 			//Thread.sleep(10);
 			
 		}
-		
+		System.out.println("SEN: " + (double)truepositive/(falsenegative+ truepositive));
+		System.out.println("DOS: " + (double)TARAS_avail / timeslot);
 		
 		TrustManager.reset();
 		TrustManager.connect(1);
 		TrustManager.reset();
 		TrustManager.close();
 		
-		//TODO 諛섎�濡� attack�씠 彛� �뾾�뿀�쑝硫� �긽�뼢�떆�궎�뒗 媛쒕뀗�씠 異붽��릺�뼱�빞 �븯�뒗媛�?
+		//TODO 반�?�? attack?�� �? ?��?��?���? ?��?��?��?��?�� 개념?�� 추�??��?��?�� ?��?���??
 		//TODO magic numbers
-		//TODO �쑀���뿉 ���븳 experience�� 洹몃９ 硫ㅻ쾭�뱾濡쒕��꽣 媛��졇�삩 寃껉낵�쓽 諛몃윴�떛�씠 �쁽�옱 �뾾�쓬.
+		//TODO ?��???�� ???�� experience?? 그룹 멤버?��로�??�� �??��?�� 것과?�� 밸런?��?�� ?��?�� ?��?��.
 		
 		
 		
