@@ -57,7 +57,7 @@ public class TrustManager {
 		
 	}
 	
-	public static double computeTrustValue(String trustor, String trustee) throws Exception {
+	public static double computeTrustValue(String trustor, String trustee, double repu) throws Exception {
 		
 		Features feats = new Features();
 		
@@ -139,17 +139,12 @@ public class TrustManager {
 		int nNegInt = pExper.countNegativeInteractions();
 		pTrVal = TrustManager.computeTrustValue(pTrVal, nPosInt, nNegInt, nTrVal);
 		//!!!!System.out.print(nSrchKey + ", pos: " + nPosInt + " neg: " + nNegInt + "\n");
-
+		
 		/*System.out.println("\tr=" + nPosInt + ",s=" + nNegInt);
 		System.out.println("\tu=1/(r+s+1)=" + 1.0 / (nPosInt + nNegInt + 1.0));
 		System.out.println("\tP(w)=b + a*u=" + pTrVal);
 
 		System.out.println("------------------------------------------------------------------------");*/
-
-		/* combine the personal and non-personal trust value into a new non-personal trust value */
-		nPosInt = nExper.countPositiveInteractions();
-		nNegInt = nExper.countNegativeInteractions();
-		nTrVal = TrustManager.computeTrustValue(nTrVal, nPosInt, nNegInt, 0.5);
 
 		/* update the personal interaction history */
 		
@@ -157,12 +152,11 @@ public class TrustManager {
 		
 		double finaltrust = 0;
 		Evidence pEv = pExper.findMatchingEvidence(feats);
-		if(pEv == null){
-			finaltrust = nTrVal;
-			
+		if(pEv == null){			//no interaction
+			finaltrust = repu;
 		}
 		else{
-			finaltrust = pTrVal;
+			finaltrust = computeTrustValue(0, nPosInt, nNegInt, repu);
 			pIhm.updateTrustValue(pEv.getId(), pTrVal);
 		}
 		/* close interaction history managers */
@@ -170,9 +164,6 @@ public class TrustManager {
 		
 		//pIhm.close();
 		//nIhm.close();
-
-
-		
 		
 		return finaltrust;
 	}
@@ -183,7 +174,7 @@ public class TrustManager {
 
 		//TODO
 
-		double trVal = nPosInt/(nPosInt+nNegInt+1.0) + (1.0 / (nPosInt + nNegInt + 1.0)) * base;
+		double trVal = nPosInt/(nPosInt+nNegInt*3+10.0) + (10.0 / (nPosInt + nNegInt*3 + 10.0)) * base;
 		
 		return (trVal);
 	}
