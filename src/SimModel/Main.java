@@ -13,7 +13,7 @@ import java.util.Collections;
 public class Main {
 	
 	static double maliciousrate = 0.2; 
-	static double maliciousactingrate = 0.2;
+	static double maliciousactingrate = 0.4;
 	static int maliciousinterval = 5;
 	static int benigninterval = 10;
 	static int maliciouslength = 20;
@@ -173,8 +173,10 @@ public class Main {
 											counter_truenegative++;
 											bailey_avail++;
 										}
-										else
+										else{
 											counter_falsepositive++;
+											bailey_avail++;
+										}
 									}
 								}
 								else {	//all interaction is done
@@ -205,9 +207,15 @@ public class Main {
 			//Thread.sleep(10);
 			
 		}
+		
+		System.out.println("SEN: " + (double)counter_truepositive/(counter_falsenegative+ counter_truepositive));
+		System.out.println("DOS: " + (double)bailey_avail / timeslot);
 		//System.out.println((double)bailey_avail / timeslot);
 		System.out.println("\n========EOB==========\n");
+		
 		//end of bailey
+		
+		
 		
 		newusers = new User[targetuser]; 
 		status = new int[targetuser];
@@ -240,16 +248,17 @@ public class Main {
 								else if(queueindex < queuesize && status[i] == 0) {		//queue is not full
 									queueindex++;
 									status[i] = j;
+									//System.out.println(newusers[i].getId() + " is in at " + j);
+									
 								}
-			
 								//System.out.println(newusers[i].getId() + "is in the queue!");
 								if(newusers[i].getInteractionLength() > j - status[i]) {		//in the interaction time
 									
 									//double AR = calculateAR(newusers[i], users);//unknown user
 									double AR = calculateAR(newusers[i], users);
-									//newusers[i].putTrustValue(TrustManager.computeTrustValue("P1", String.valueOf(i), AR)); 
+									newusers[i].putTrustValue(TrustManager.computeTrustValue("P1", String.valueOf(i), AR)); 
 									
-									newusers[i].putTrustValue(AR); //only reputation
+									//newusers[i].putTrustValue(AR); //only reputation
 									
 									//System.out.println(i + "tries to interact!" + j + ":" + status[i]);
 									if(newusers[i].getMaliciousness() == 1){ //malicious
@@ -267,9 +276,10 @@ public class Main {
 												settimeclock[i] = newusers[i].getInterval();
 												markedasmalicious[i] = 1;
 												TARAS_avail++;
+												//System.out.println(newusers[i].getId() + " is kicked out at " + j);
 												//System.out.println(i + "'s trust value is too low: " + j);
 											}
-											TrustManager.putInteraction("P1",String.valueOf(i), Feedback.NEGATIVE, users[i].getTrustValue()); 
+											TrustManager.putInteraction("P1",String.valueOf(i), Feedback.NEGATIVE, newusers[i].getTrustValue()); 
 										}
 										else{//sensing benign actions
 											if(newusers[i].getTrustValue() > trustthreshold){ 	//Access rights are too high	
@@ -285,9 +295,10 @@ public class Main {
 												settimeclock[i] = newusers[i].getInterval();
 												TARAS_avail++;
 												markedasmalicious[i] = 1;
+												//System.out.println(newusers[i].getId() + " is kicked out at " + j);
 												//System.out.println(i + "'s trust value is too low: " + j);
 											}
-											TrustManager.putInteraction("P1",String.valueOf(i), Feedback.POSITIVE, users[i].getTrustValue()); 
+											TrustManager.putInteraction("P1",String.valueOf(i), Feedback.POSITIVE, newusers[i].getTrustValue()); 
 										}
 									}
 									else{		//benign user
@@ -300,12 +311,13 @@ public class Main {
 											TARAS_avail++;
 										}
 											
-										TrustManager.putInteraction("P1",String.valueOf(i), Feedback.POSITIVE, users[i].getTrustValue()); 
+										TrustManager.putInteraction("P1",String.valueOf(i), Feedback.POSITIVE, newusers[i].getTrustValue()); 
 									}
 								}
 								else {	//all interaction is done
 									queueindex--;
 									status[i] = 0;
+									//System.out.println(newusers[i].getId() + " is out at " + j);
 									settimeclock[i] = newusers[i].getInterval();
 									
 								}
@@ -367,8 +379,7 @@ public class Main {
 		
 		
 		double finalrisk = risk /count;
-		if(target.getMaliciousness() == 1)
-			System.out.println(target.getId() + "'s risk = " + finalrisk);
+		
 		
 		return finalrisk;
 	}
@@ -376,13 +387,13 @@ public class Main {
 	
 	public static void demoteAR(User user){
 		if(user.getAccessRights().equals("C")){
-			user.putAccessRights("U");
+			user.putAccessRights("N");
 		}
 		else if(user.getAccessRights().equals("U")){
-			user.putAccessRights("D");
+			user.putAccessRights("N");
 		}
 		else if(user.getAccessRights().equals("D")){
-			user.putAccessRights("R");
+			user.putAccessRights("N");
 		}
 		else if(user.getAccessRights().equals("R")){
 			user.putAccessRights("N");
