@@ -174,7 +174,8 @@ public class TrustManager {
 
 		//TODO
 
-		double trVal = nPosInt/(nPosInt+nNegInt+30.0) + (30.0 / (nPosInt + nNegInt + 30.0)) * base;
+		double wvalue = 10;
+		double trVal = nPosInt/(nPosInt+nNegInt*5+wvalue) + (wvalue / (nPosInt + nNegInt*5 + wvalue)) * base;
 		
 		return (trVal);
 	}

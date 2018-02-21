@@ -8,6 +8,7 @@ import kr.ac.kaist.server.commcentr.trust.history.Feedback;
 
 import java.util.Arrays;
 import java.util.Random;
+import java.util.Scanner;
 import java.util.Collections;
 
 public class Main {
@@ -16,16 +17,16 @@ public class Main {
 	static double maliciousactingrate = 0.4;
 	static int maliciousinterval = 5;
 	static int benigninterval = 10;
+	
 	static int maliciouslength = 20;
 	static int benignlength = 5;
 	
-	
-	static int learninguser = 200;
+	static int learninguser = 100;
 	static int learninground = 20;
 	static int targetuser = 100;
 	static int timeslot = 1001;
 	static int groupnum = 10;
-	static double trustthreshold = 0.5;
+	static double trustthreshold = 0.25;
 	static double interactionprob = 0.5;
 	static double baserate = 0.5;
 	static int queuesize=1;
@@ -33,10 +34,14 @@ public class Main {
 	public static void main(String[] args) throws Exception {
 		
 		Random oRandom = new Random();
+		Scanner sc = new Scanner(System.in);
 
 		User[] users = new User[learninguser]; 	//learning for previous users (I-sharing only)
 		
+		int[] learningmax = new int[learninguser];
+		
 		for(int i = 0; i < learninguser; i++){
+			learningmax[i] = oRandom.nextInt(learninground);
 			
 			if(i > (1 - maliciousrate) * learninguser)
 				users[i] = new User(i, i/(learninguser/groupnum), 1, "U", baserate, maliciousinterval, maliciouslength);
@@ -48,9 +53,10 @@ public class Main {
 		TrustManager.connect(1);
 		for(int j = 0; j < learninground; j++){
 			
-			
-			
 			for(int i = 0; i < learninguser; i++){
+				
+				if(learningmax[i] <= j)
+					continue;
 				
 				if(oRandom.nextBoolean()){		//P-interaction = 0.5
 					users[i].putTrustValue(TrustManager.computeTrustValue("P1", String.valueOf(i), baserate)); 
@@ -199,7 +205,7 @@ public class Main {
 				}
 			}
 			if(j % 100 == 0){
-				System.out.println(j + "TP: " + (double)counter_truepositive/(counter_falsenegative+ counter_truepositive) + ": " + (double) bailey_avail / j);
+				//System.out.println(j + "TP: " + (double)counter_truepositive/(counter_falsenegative+ counter_truepositive) + ": " + (double) bailey_avail / j);
 				//System.out.println(j + "TN: " + (double)counter_truenegative/(counter_falsepositive+ counter_truenegative) + ": " + (double) bailey_avail / j);
 				
 			}
@@ -208,8 +214,8 @@ public class Main {
 			
 		}
 		
-		System.out.println("SEN: " + (double)counter_truepositive/(counter_falsenegative+ counter_truepositive));
-		System.out.println("DOS: " + (double)bailey_avail / timeslot);
+		//System.out.println("SEN: " + (double)counter_truepositive/(counter_falsenegative+ counter_truepositive));
+		//System.out.println("DOS: " + (double)bailey_avail / timeslot);
 		//System.out.println((double)bailey_avail / timeslot);
 		System.out.println("\n========EOB==========\n");
 		
@@ -258,6 +264,9 @@ public class Main {
 									double AR = calculateAR(newusers[i], users);
 									newusers[i].putTrustValue(TrustManager.computeTrustValue("P1", String.valueOf(i), AR)); 
 									
+									if(newusers[i].getId() == 85 || newusers[i].getId() == 91 || newusers[i].getId() == 92 || newusers[i].getId() == 93) {
+										//System.out.println("trust value of " + newusers[i].getId() + ": " + newusers[i].getTrustValue());
+									}
 									//newusers[i].putTrustValue(AR); //only reputation
 									
 									//System.out.println(i + "tries to interact!" + j + ":" + status[i]);
@@ -304,13 +313,18 @@ public class Main {
 									else{		//benign user
 										if(newusers[i].getTrustValue() > trustthreshold){
 											truenegative++;
-											TARAS_avail++;
+											
 										}
 										else {
 											falsepositive++;
+											queueindex--;
+											status[i] = 0;
+											settimeclock[i] = newusers[i].getInterval();
 											TARAS_avail++;
-										}
+											markedasmalicious[i] = 1;
 											
+										}
+										TARAS_avail++;	
 										TrustManager.putInteraction("P1",String.valueOf(i), Feedback.POSITIVE, newusers[i].getTrustValue()); 
 									}
 								}
@@ -336,7 +350,7 @@ public class Main {
 			}
 			if(j % 100 == 0){
 				System.out.println(j + "TP: " + (double)truepositive/(falsenegative+ truepositive) + ": " + (double)TARAS_avail / j);
-				//System.out.println(j + "TN: " + (double)truenegative/(falsepositive+ truenegative) + ": " + (double)TARAS_avail / j);
+				System.out.println(j + "TN: " + (double)truenegative/(falsepositive+ truenegative) + ": " + (double)TARAS_avail / j);
 				
 				//System.out.println(j + "NPV: " + (double)counter_truenegative/(counter_falsenegative+ counter_truenegative));
 				//System.out.println(j + "ACC: " + (double)(counter_truepositive+counter_truenegative)/(counter_falsepositive+ counter_truepositive+counter_falsenegative+counter_truenegative));
@@ -347,7 +361,14 @@ public class Main {
 			
 		}
 		System.out.println("SEN: " + (double)truepositive/(falsenegative+ truepositive));
+		System.out.println("TN: " + (double)truenegative/(falsepositive+ truenegative));
 		System.out.println("DOS: " + (double)TARAS_avail / timeslot);
+		System.out.println("==================");
+		
+		
+		
+		System.out.print("reset?: ");
+		sc.next();
 		
 		TrustManager.reset();
 		TrustManager.connect(1);
@@ -360,7 +381,7 @@ public class Main {
 		
 		
 		
-		System.out.println("==================");
+		
 		System.exit(0);
 	}
 	
