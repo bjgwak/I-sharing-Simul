@@ -26,7 +26,7 @@ public class Main {
 	static int targetuser = 100;
 	static int timeslot = 1001;
 	static int groupnum = 10;
-	static double trustthreshold = 0.25;
+	static double trustthreshold = 0.55;
 	static double interactionprob = 0.5;
 	static double baserate = 0.5;
 	static int queuesize=1;
@@ -345,13 +345,18 @@ public class Main {
 						}
 				}
 				else {		//marked as malicious
-					truepositive++;
+					//truepositive++;
 				}
 			}
+			
+			//truenegative /= benignlength;
+			
+			
 			if(j % 100 == 0){
-				System.out.println(j + "TP: " + (double)truepositive/(falsenegative+ truepositive) + ": " + (double)TARAS_avail / j);
-				System.out.println(j + "TN: " + (double)truenegative/(falsepositive+ truenegative) + ": " + (double)TARAS_avail / j);
-				
+				//System.out.println(j + "TP: " + (double)truepositive/(falsenegative+ truepositive) + " : " + (double)TARAS_avail / j);
+				//System.out.println(j + "TN: " + (double)truenegative/(falsepositive+ truenegative) + " : " + truenegative+" : "+ falsepositive + " : "+ (double)TARAS_avail / j);
+				System.out.println((double)(truenegative+truepositive)/(falsepositive+ truenegative + falsenegative + truepositive) + " : " + (double)TARAS_avail / j);
+				System.out.println(j + ": " + truenegative +" : "+ truepositive +" : "+ falsenegative +" : "+ falsepositive);
 				//System.out.println(j + "NPV: " + (double)counter_truenegative/(counter_falsenegative+ counter_truenegative));
 				//System.out.println(j + "ACC: " + (double)(counter_truepositive+counter_truenegative)/(counter_falsepositive+ counter_truepositive+counter_falsenegative+counter_truenegative));
 			}
@@ -362,6 +367,7 @@ public class Main {
 		}
 		System.out.println("SEN: " + (double)truepositive/(falsenegative+ truepositive));
 		System.out.println("TN: " + (double)truenegative/(falsepositive+ truenegative));
+		System.out.println("ACC: " + (double)(truenegative+truepositive)/(falsepositive+ truenegative + falsenegative + truepositive));
 		System.out.println("DOS: " + (double)TARAS_avail / timeslot);
 		System.out.println("==================");
 		
@@ -375,9 +381,7 @@ public class Main {
 		TrustManager.reset();
 		TrustManager.close();
 		
-		//TODO 반�?�? attack?�� �? ?��?��?���? ?��?��?��?��?�� 개념?�� 추�??��?��?�� ?��?���??
-		//TODO magic numbers
-		//TODO ?��???�� ???�� experience?? 그룹 멤버?��로�??�� �??��?�� 것과?�� 밸런?��?�� ?��?�� ?��?��.
+		
 		
 		
 		
