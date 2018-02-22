@@ -21,12 +21,14 @@ public class Main {
 	static int maliciouslength = 20;
 	static int benignlength = 5;
 	
+	static int blockinterval = 20;
+	
 	static int learninguser = 100;
 	static int learninground = 20;
 	static int targetuser = 100;
 	static int timeslot = 1001;
 	static int groupnum = 10;
-	static double trustthreshold = 0.55;
+	static double trustthreshold = 0.4;
 	static double interactionprob = 0.5;
 	static double baserate = 0.5;
 	static int queuesize=1;
@@ -35,7 +37,19 @@ public class Main {
 		
 		Random oRandom = new Random();
 		Scanner sc = new Scanner(System.in);
-
+		
+		
+		System.out.print("reset?: ");
+		String check = sc.next();
+		
+		if(check.equals("y")) {
+			TrustManager.connect(1);
+			TrustManager.reset();
+			TrustManager.connect(2);
+			TrustManager.reset();
+			TrustManager.close();
+		}
+		
 		User[] users = new User[learninguser]; 	//learning for previous users (I-sharing only)
 		
 		int[] learningmax = new int[learninguser];
@@ -345,18 +359,29 @@ public class Main {
 						}
 				}
 				else {		//marked as malicious
-					//truepositive++;
+					if(settimeclock[i] == 0) {
+						if(newusers[i].getMaliciousness() == 1) {
+							truepositive++;
+						}
+						else {
+							falsepositive++;
+						}
+						
+						settimeclock[i] = blockinterval;
+					}
+					else
+						settimeclock[i]--;
 				}
 			}
 			
-			//truenegative /= benignlength;
+			
 			
 			
 			if(j % 100 == 0){
 				//System.out.println(j + "TP: " + (double)truepositive/(falsenegative+ truepositive) + " : " + (double)TARAS_avail / j);
 				//System.out.println(j + "TN: " + (double)truenegative/(falsepositive+ truenegative) + " : " + truenegative+" : "+ falsepositive + " : "+ (double)TARAS_avail / j);
 				System.out.println((double)(truenegative+truepositive)/(falsepositive+ truenegative + falsenegative + truepositive) + " : " + (double)TARAS_avail / j);
-				System.out.println(j + ": " + truenegative +" : "+ truepositive +" : "+ falsenegative +" : "+ falsepositive);
+				System.out.println(truenegative +" : "+ truepositive +" : "+ falsenegative +" : "+ falsepositive);
 				//System.out.println(j + "NPV: " + (double)counter_truenegative/(counter_falsenegative+ counter_truenegative));
 				//System.out.println(j + "ACC: " + (double)(counter_truepositive+counter_truenegative)/(counter_falsepositive+ counter_truepositive+counter_falsenegative+counter_truenegative));
 			}
@@ -370,19 +395,6 @@ public class Main {
 		System.out.println("ACC: " + (double)(truenegative+truepositive)/(falsepositive+ truenegative + falsenegative + truepositive));
 		System.out.println("DOS: " + (double)TARAS_avail / timeslot);
 		System.out.println("==================");
-		
-		
-		
-		System.out.print("reset?: ");
-		sc.next();
-		
-		TrustManager.reset();
-		TrustManager.connect(1);
-		TrustManager.reset();
-		TrustManager.close();
-		
-		
-		
 		
 		
 		
